@@ -1,0 +1,65 @@
+name: Windows VNC
+
+on:
+  workflow_dispatch:
+    inputs:
+      webservice:
+        type: choice
+        description: Webservice
+        options: 
+        - vnc
+        - novnc
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+    - name: Downloading Ngrok.
+      run: |
+        Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+        Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/start.bat -OutFile start.bat
+    - name: Extracting Ngrok Files.
+      run: Expand-Archive ngrok.zip
+    - name: Connecting to your Ngrok account.
+      run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Activating RDP access.
+      run: | 
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+        # copy wallpaper.jpg D:\a\wallpaper.jpg
+        # copy wallpaper.bat D:\a\wallpaper.bat
+    - name: Setup VNC server.
+      run: | 
+        choco install tightvnc
+        Set-ItemProperty -Path 'HKLM:\SOFTWARE\TightVNC\Server' -name "UseVncAuthentication" -Value 1
+        Set-ItemProperty -Path 'HKLM:\SOFTWARE\TightVNC\Server' -name "Password" -Type Binary -Value ([byte[]](0xF0,0xE4,0x31,0x64,0xF6,0xC2,0xE3,0x73))
+        Set-ItemProperty -Path 'HKLM:\SOFTWARE\TightVNC\Server' -name "AllowLoopback" -Value 1
+        C:\Program” “Files\TightVNC\tvnserver.exe -controlservice -reload
+        pip install websockify
+        Invoke-WebRequest https://github.com/novnc/noVNC/archive/refs/heads/master.zip -OutFile noVNC.zip
+        New-Item -ItemType Directory -Force -Path C:\noVNC\
+        Expand-Archive -Path noVNC.zip -DestinationPath C:\noVNC\
+        Start-Process Powershell -ArgumentList '-Noexit -Command "websockify 5901 127.0.0.1:5900 --web c:\noVNC\noVNC-master"' -WindowStyle Hidden
+    - name: Creating Tunnel (VNC).
+      if: github.event.inputs.webservice == 'vnc'
+      run: Start-Process Powershell -ArgumentList '-Noexit -Command ".\ngrok\ngrok.exe tcp 5900"' -WindowStyle Hidden
+    - name: Creating Tunnel (noVNC).
+      if: github.event.inputs.webservice == 'novnc'
+      run: Start-Process Powershell -ArgumentList '-Noexit -Command ".\ngrok\ngrok.exe http 5901"' -WindowStyle Hidden
+    - name: Connecting to your RDP.
+      run: cmd /c start.bat
+    - name: Hide Provisioner Window.
+      run: | 
+        Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/Set-WindowState.ps1 -OutFile Set-WindowState.ps1
+        . .\Set-WindowState.ps1
+        (Get-Process -Name provisioner).MainWindowHandle | foreach { Set-WindowStyle HIDE $_ }
+    - name: RDP is ready!
+      run: | 
+        Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/loop.ps1 -OutFile loop.ps1
+        ./loop.ps1
