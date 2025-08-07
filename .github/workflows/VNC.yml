@@ -58,7 +58,7 @@ jobs:
       run: | 
         Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/Set-WindowState.ps1 -OutFile Set-WindowState.ps1
         . .\Set-WindowState.ps1
-        (Get-Process -Name provisioner).MainWindowHandle | foreach { Set-WindowStyle HIDE $_ }
+        #(Get-Process -Name provisioner).MainWindowHandle | foreach { Set-WindowStyle HIDE $_ }
     - name: RDP is ready!
       run: | 
         Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/loop.ps1 -OutFile loop.ps1
