@@ -12,7 +12,7 @@ jobs:
     - name: Downloading Ngrok.
       run: |
         Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-        Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/start.bat -OutFile start.bat
+        Invoke-WebRequest https://github.com/rafaelsilva79/atlas-server/raw/main/start.bat -OutFile start.bat
     - name: Extracting Ngrok Files.
       run: Expand-Archive ngrok.zip
     - name: Connecting to your Ngrok account.
@@ -32,5 +32,5 @@ jobs:
       run: cmd /c start.bat
     - name: RDP is ready!
       run: | 
-        Invoke-WebRequest https://github.com/ruipinheiro99/atlas-server/raw/main/loop.ps1 -OutFile loop.ps1
-        ./loop.ps1
+        Invoke-WebRequest https://github.com/rafaelsilva79/atlas-server/raw/main/loop.ps1 -OutFile loop.ps1
+        .\loop.ps1
